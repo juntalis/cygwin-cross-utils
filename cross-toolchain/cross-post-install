@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# Setup exception handling
+set -e
+trap 'previous_command=$this_command; this_command=$BASH_COMMAND' DEBUG
+trap 'echo -e "\e[1;91mERROR:\e[0m \e[97mFailed while running the following command:\e[0m\n\n  $previous_command"' ERR
+
+PACKAGE_NAME="${0%-configure}"
+
+# Split out the leading triple and folders
+_CROSS_BINPREFIX="${1%-}"
+
+
+# Split out the leading triple and folders
+_CROSS_BINPREFIX="${0%-configure}"
+
+# Identify host information
+export MACHTYPE="${MACHTYPE/-unknown-/-pc-}"
+HOST="${MACHTYPE}"
+
+HOST_CC="$(which gcc)"
+HOST_CXX="$(which g++)"
+
+HOST_PREFIX="$(cd "$(dirname "$0")/.."; pwd)"
+
+# Identify target information
+TARGET="$(basename "${_CROSS_BINPREFIX}")"
+
+TARGET_AR="${_CROSS_BINPREFIX}-ar"
+TARGET_AS="${_CROSS_BINPREFIX}-as"
+TARGET_LD="${_CROSS_BINPREFIX}-ld"
+TARGET_NM="${_CROSS_BINPREFIX}-nm"
+TARGET_CC="${_CROSS_BINPREFIX}-gcc"
+TARGET_CXX="${_CROSS_BINPREFIX}-g++"
+TARGET_CPP="${_CROSS_BINPREFIX}-cpp"
+TARGET_RANLIB="${_CROSS_BINPREFIX}-ranlib"
+TARGET_ELFEDIT="${_CROSS_BINPREFIX}-elfedit"
+TARGET_READELF="${_CROSS_BINPREFIX}-readelf"
+TARGET_OBJCOPY="${_CROSS_BINPREFIX}-objcopy"
+TARGET_OBJDUMP="${_CROSS_BINPREFIX}-objdump"
+
+TARGET_SYSROOT="${HOST_PREFIX}/${TARGET}/sysroot"
+TARGET_PREFIX="${TARGET_SYSROOT}/usr"
+
+TARGET_PKG_CONFIG="$(which pkg-config)"
+TARGET_PKG_CONFIG_LIBDIR="${TARGET_PREFIX}/lib/pkgconfig"
+TARGET_PKG_CONFIG_PATH="${TARGET_PREFIX}/lib/pkgconfig:${TARGET_PREFIX}/share/pkgconfig"

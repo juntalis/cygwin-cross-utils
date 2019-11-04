@@ -1,0 +1,35 @@
+#=============================================================================#
+# Author: Charles Grunwald
+# Cross-compiler for x86_64 Linux
+#=============================================================================#
+set(CMAKE_SYSTEM_NAME @CROSS_SYSTEM_NAME@)
+set(CMAKE_SYSTEM_PROCESSOR @CROSS_PROCESSOR@)
+
+set(CROSS_BIN_DIR "${CMAKE_CURRENT_LIST_DIR}")
+get_filename_component(CROSS_ROOT ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
+
+set(TRIPLE @CROSS_TRIPLE@)
+set(TOOLCHAIN_ROOT "${CROSS_ROOT}/${TRIPLE}")
+
+set(CMAKE_SYSROOT "${TOOLCHAIN_ROOT}/sysroot")
+set(CMAKE_STAGING_PREFIX "${CMAKE_SYSROOT}/usr")
+set(CMAKE_INSTALL_PREFIX "${CMAKE_STAGING_PREFIX}")
+
+set(CMAKE_C_COMPILER   "${CROSS_ROOT}/bin/${TRIPLE}-gcc" CACHE FILEPATH "C Compiler")
+set(CMAKE_CXX_COMPILER "${CROSS_ROOT}/bin/${TRIPLE}-g++" CACHE FILEPATH "CXX Compiler")
+
+set(CMAKE_LINKER "${CROSS_ROOT}/bin/${TRIPLE}-ld" CACHE FILEPATH "Linker")
+set(CMAKE_AR "${CROSS_ROOT}/bin/${TRIPLE}-ar" CACHE FILEPATH "Archiver")
+
+if("${CMAKE_GENERATOR}" MATCHES "Ninja")
+	set(CMAKE_MAKE_PROGRAM /usr/bin/ninja)
+else()
+	set(CMAKE_MAKE_PROGRAM /usr/bin/make)
+endif()
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+include(Platform/UnixPaths)

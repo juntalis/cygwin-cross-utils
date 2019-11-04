@@ -1,0 +1,42 @@
+*.pdf       merge=binary
+*.sln       merge=binary
+*.vcxproj   merge=binary
+
+*.jpg   binary
+*.png   binary
+*.gif   binary
+*.bin   binary
+*.dll   binary
+*.exe   binary
+*.cmd   binary
+*.lib   binary
+*.mmdb  binary
+*.db3   binary
+*.doc   diff=astextplain
+*.DOC   diff=astextplain
+*.docx  diff=astextplain
+*.DOCX  diff=astextplain
+*.dot   diff=astextplain
+*.DOT   diff=astextplain
+*.pdf   diff=astextplain
+*.PDF   diff=astextplain
+*.rtf   diff=astextplain
+*.RTF   diff=astextplain
+
+* text=auto
+*.c text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+*.ksh text eol=lf
+*.csh text eol=lf
+*.fish text eol=lf
+*.gperf text eol=lf
+*.in text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.rst text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

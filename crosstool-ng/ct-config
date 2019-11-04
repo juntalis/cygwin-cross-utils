@@ -1,0 +1,32 @@
+#!/bin/bash
+# Configuration wrapper
+
+# Get the absolute path to the script's parent directory.
+function scriptdir()
+{
+	local srcdir
+	local src="${BASH_SOURCE[0]}"
+	while [ -h "${src}" ]; do
+		srcdir="$(cd -P "$(dirname "${src}")" && pwd)"
+		src="$(readlink "${src}")"
+		[[ "${src}" != "/*" ]] && src="${srcdir}/${src}"
+	done
+	$( cd -P "$( dirname "${src}" )" )
+	pwd
+}
+
+function _postfix()
+{
+	local filepath="$(scriptdir)/.config"
+	echo 'Applying post-fixes..'
+	sed -i \
+		-e 's/CT_GETTEXT=y/CT_GETTEXT=n/g' \
+		-e 's/CT_LIBICONV=y/CT_LIBICONV=n/g' \
+		-e 's/CT_GETTEXT_NEEDED=y/CT_GETTEXT_NEEDED=n/g' \
+		-e 's/CT_LIBICONV_NEEDED=y/CT_LIBICONV_NEEDED=n/g' \
+		-e 's/^CT_GETTEXT_V/# CT_GETTEXT_V/g' \
+		-e 's/^CT_LIBICONV_V/# CT_LIBICONV_V/g' \
+		"${filepath}" || return $?
+}
+
+ct-ng ${1:-menuconfig} && _postfix || exit $?

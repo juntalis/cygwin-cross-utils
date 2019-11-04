@@ -1,0 +1,159 @@
+#!/bin/sh
+
+# Setup exception handling
+set -e
+trap 'previous_command=$this_command; this_command=$BASH_COMMAND' DEBUG
+trap 'echo -e "\e[1;91mERROR:\e[0m \e[97mFailed while running the following command:\e[0m\n\n  $previous_command"' ERR
+
+# Fatal handler
+function _die()
+{
+	local message=${1:-Unknown error}
+	local code=${2:-$?}
+	
+	# Print the fatal error
+	if [ ! -z "${message}" ]; then
+		echo "FATAL: ${message}"
+	fi
+	
+	# If no error code is set, default it to 1.
+	[[ ${code} -ne 0 ]] || code=1
+	
+	# Exit with the failure code
+	exit ${code}
+}
+
+function is_configure()
+{
+	local argbase="$(basename "${1}")"
+	if ([ -f "${1}" ] && [ -x "${1}" ] && [ "${argbase}" == "configure" ]); then
+		return 0
+	else
+		return 1
+	fi
+}
+
+# Split out the leading triple and folders
+_CROSS_BINPREFIX="${0%-configure}"
+
+# Identify host information
+export MACHTYPE="${MACHTYPE/-unknown-/-pc-}"
+HOST="${MACHTYPE}"
+
+HOST_CC="$(which gcc)"
+HOST_CXX="$(which g++)"
+
+HOST_PREFIX="$(cd "$(dirname "$0")/.."; pwd)"
+
+# Identify target information
+TARGET="$(basename "${_CROSS_BINPREFIX}")"
+
+TARGET_AR="${_CROSS_BINPREFIX}-ar"
+TARGET_AS="${_CROSS_BINPREFIX}-as"
+TARGET_LD="${_CROSS_BINPREFIX}-ld"
+TARGET_NM="${_CROSS_BINPREFIX}-nm"
+TARGET_CC="${_CROSS_BINPREFIX}-gcc"
+TARGET_CXX="${_CROSS_BINPREFIX}-g++"
+TARGET_CPP="${_CROSS_BINPREFIX}-cpp"
+TARGET_RANLIB="${_CROSS_BINPREFIX}-ranlib"
+TARGET_ELFEDIT="${_CROSS_BINPREFIX}-elfedit"
+TARGET_READELF="${_CROSS_BINPREFIX}-readelf"
+TARGET_OBJCOPY="${_CROSS_BINPREFIX}-objcopy"
+TARGET_OBJDUMP="${_CROSS_BINPREFIX}-objdump"
+
+TARGET_SYSROOT="${HOST_PREFIX}/${TARGET}/sysroot"
+TARGET_PREFIX="${TARGET_SYSROOT}/usr"
+
+TARGET_PKG_CONFIG="$(which pkg-config)"
+TARGET_PKG_CONFIG_LIBDIR="${TARGET_PREFIX}/lib/pkgconfig"
+TARGET_PKG_CONFIG_PATH="${TARGET_PREFIX}/lib/pkgconfig:${TARGET_PREFIX}/share/pkgconfig"
+
+# Finally, let's process our cmdline args
+SH_ARGS=()
+SH_CONFIGURE=""
+for argv in "$@"
+do
+	case "${argv}" in
+		*/configure)
+			if is_configure "${argv}"; then
+				SH_CONFIGURE="${argv}"
+			else
+				SH_ARGS+=("${argv}")
+			fi
+			break
+			;;
+		*)
+			SH_ARGS+=("${argv}")
+			break
+			;;
+	esac
+done
+
+# Last pass to try to locate configure script if not already found.
+[ -z "${SH_CONFIGURE}" ] && is_configure "../configure" && SH_CONFIGURE="../configure" || true
+[ -z "${SH_CONFIGURE}" ] && is_configure "./configure" && SH_CONFIGURE="./configure" || true
+[ -z "${SH_CONFIGURE}" ] && _die "Failed to locate configure script!"
+
+# Log configure command
+if [ ! -z "${CROSS_DEBUG}" ]; then
+	echo "TRIPLE=\"${TARGET}\" "
+	echo "  AR=\"${TARGET_AR}\" "
+	echo "  AS=\"${TARGET_AS}\" "
+	echo "  LD=\"${TARGET_LD}\" "
+	echo "  NM=\"${TARGET_NM}\" "
+	echo "  CC=\"${TARGET_CC}\" "
+	echo "  CXX=\"${TARGET_CXX}\" "
+	echo "  CPP=\"${TARGET_CPP}\" "
+	echo "  RANLIB=\"${TARGET_RANLIB}\" "
+	echo "  ELFEDIT=\"${TARGET_ELFEDIT}\" "
+	echo "  READELF=\"${TARGET_READELF}\" "
+	echo "  OBJCOPY=\"${TARGET_OBJCOPY}\" "
+	echo "  OBJDUMP=\"${TARGET_OBJDUMP}\" "
+	echo "  PKG_CONFIG=\"${TARGET_PKG_CONFIG}\" "
+	echo "  PKG_CONFIG_PATH=\"${TARGET_PKG_CONFIG_PATH}\" "
+	echo "  PKG_CONFIG_LIBDIR=\"${TARGET_PKG_CONFIG_LIBDIR}\" "
+	echo "  \"${SH_CONFIGURE}\" "
+	echo "  --host=\"${HOST}\" "
+	echo "  --build=\"${HOST}\" "
+	echo "  --target=\"${TARGET}\" "
+	echo "  --with-sysroot=\"${TARGET_SYSROOT}\" "
+	echo "  --prefix=\"${TARGET_PREFIX}\" "
+	echo "  --enable-shared "
+	echo "  --enable-static "
+	echo "  --with-pic "
+	echo "  --with-gnu-ld "
+	echo "  ${SH_ARGS}"
+fi
+
+# Run configure
+TRIPLE="${TARGET}" \
+AR="${TARGET_AR}" \
+AS="${TARGET_AS}" \
+LD="${TARGET_LD}" \
+NM="${TARGET_NM}" \
+CC="${TARGET_CC}" \
+CXX="${TARGET_CXX}" \
+CPP="${TARGET_CPP}" \
+CXXCPP="${TARGET_CPP}" \
+RANLIB="${TARGET_RANLIB}" \
+ELFEDIT="${TARGET_ELFEDIT}" \
+READELF="${TARGET_READELF}" \
+OBJCOPY="${TARGET_OBJCOPY}" \
+OBJDUMP="${TARGET_OBJDUMP}" \
+OBJEXT=".o" \
+SED="/usr/bin/sed" \
+MKDIR_P="mkdir -p" \
+AUTOMAKE="automake" \
+PKG_CONFIG="${TARGET_PKG_CONFIG}" \
+PKG_CONFIG_PATH="${TARGET_PKG_CONFIG_PATH}" \
+PKG_CONFIG_LIBDIR="${TARGET_PKG_CONFIG_LIBDIR}" \
+"${SH_CONFIGURE}" \
+	--host="${TARGET}" \
+	--target="${TARGET}" \
+	--with-sysroot="${TARGET_SYSROOT}" \
+	--prefix="${TARGET_PREFIX}" \
+	--enable-shared \
+	--enable-static \
+	--with-pic \
+	--with-gnu-ld \
+	${SH_ARGS[@]}
